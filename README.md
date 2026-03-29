@@ -5,6 +5,16 @@
 
 Self-hosted service that allows you to easily access avatars from any platform
 
+## Usage
+
+Open in your browser or use as an `<img>` src:
+```
+http://localhost:8080/{service}/{identifier}
+
+# example:
+http://localhost:8080/telegram/paul
+```
+
 ## Running
 
 Set up your [.env](.env.example), then using docker, run through:
