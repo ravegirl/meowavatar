@@ -1,0 +1,47 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    env_file:
+      - .env
+    environment:
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:$$PORT/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  tests:
+    image: python:3.12-alpine
+    working_dir: /tests
+    volumes:
+      - ./tests:/tests:ro
+    environment:
+      - BASE_URL=http://app:${PORT:-8080}
+    command: >
+      sh -c "python -m venv /venv && /venv/bin/pip install -q -r requirements.txt && /venv/bin/pytest -v"
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - test
